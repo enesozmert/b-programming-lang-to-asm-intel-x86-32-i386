@@ -23,7 +23,7 @@
 "+"|"-"|"*"|"/"|"%" { return yytext[0]; }
 [{}();,]            { return yytext[0]; }
 
-[ \t\n]+            ;   // Ignore whitespace
+[\r\t\n ]+             ;   // Ignore whitespace
 .                   { fprintf(stderr, "Unexpected character: %s\n", yytext); exit(1); }
 
 %%

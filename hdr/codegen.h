@@ -17,6 +17,11 @@ int emit_div(int lhs, int rhs);
 void emit_if(int condition);
 void emit_while(int condition);
 
+
+void emit_push(int value);
+void emit_call(const char *func_name, int arg_count);
+void emit_assignment_expr(const char *var);
+
 int sym_lookup_offset(const char *name);
 
 #endif

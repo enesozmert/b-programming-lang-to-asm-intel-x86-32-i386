@@ -2,7 +2,8 @@ CC      = gcc
 LEX     = flex
 YACC    = bison
 CFLAGS  = -Wall -Wextra -Werror -g -I$(HDRDIR)
-LDFLAGS = -ly -ll -m32
+# LDFLAGS = -ly -ll -m32
+LDFLAGS = -lm
 
 SRCDIR    = src
 LEXERDIR  = $(SRCDIR)/lexer
@@ -37,8 +38,8 @@ $(OBJDIR)/y.tab.o $(OBJDIR)/y.tab.h: $(YACCSRC) | $(OBJDIR)
 	$(CC) $(CFLAGS) -c $(OBJDIR)/y.tab.c -o $(OBJDIR)/y.tab.o
 
 $(OBJDIR)/lex.yy.o: $(LEXSRC) $(OBJDIR)/y.tab.h | $(OBJDIR)
-	$(LEX) -o $(OBJDIR)/lex.yy.c $(LEXSRC)
-	$(CC) $(CFLAGS) -c $(OBJDIR)/lex.yy.c -o $@
+	$(LEX) --nounput -o $(OBJDIR)/lex.yy.c $(LEXSRC)
+	$(CC) $(CFLAGS) -Wno-unused-function -c $(OBJDIR)/lex.yy.c -o $@
 
 $(OBJDIR):
 	@mkdir -p $(OBJDIR)
@@ -55,19 +56,8 @@ fclean: clean
 re: fclean all
 
 run: $(NAME)
-	@if [ -z "$(ARGS)" ]; then \
-		if [ "$(SUDO)" = "1" ]; then \
-			sudo $(NAME); \
-		else \
-			$(NAME); \
-		fi \
-	else \
-		if [ "$(SUDO)" = "1" ]; then \
-			sudo $(NAME) $(ARGS); \
-		else \
-			$(NAME) $(ARGS); \
-		fi \
-	fi
+	@echo "Running b-files/b.main..."
+	@$(NAME) b-files/main.b
 
 output_dir:
 	@cd $(OUTDIR) && bash

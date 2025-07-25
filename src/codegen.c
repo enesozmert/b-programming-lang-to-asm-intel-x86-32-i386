@@ -36,9 +36,39 @@ void emit_assignment(const char *var, int value) {
         fprintf(stderr, "Undefined variable: %s\n", var);
         exit(1);
     }
-    printf("mov eax, %d\n", value);
-    printf("mov [ebp-%d], eax\n", offset);
+
+    // push value (şu anda sabit, aslında expression değeri olmalı)
+    printf("push %d\n", value); // veya eax vs.
+
+    // push adres of variable
+    printf("lea eax, [ebp-%d]\n", offset);
+    printf("push eax\n");
+
+    // pop destination address into ebx
+    printf("pop ebx\n");
+
+    // pop value into eax
+    printf("pop eax\n");
+
+    // store eax (value) into [ebx] (address)
+    printf("mov [ebx], eax\n");
 }
+
+void emit_assignment_expr(const char *var) {
+    int offset = sym_lookup_offset(var);
+    if (offset == -1) {
+        fprintf(stderr, "Undefined variable: %s\n", var);
+        exit(1);
+    }
+
+    // buraya kadar eax = hesaplanmış expr sonucu olmalı
+
+    // adresi al
+    printf("lea ebx, [ebp-%d]\n", offset);
+    // ata
+    printf("mov [ebx], eax\n");
+}
+
 
 void emit_return(int value) {
     printf("mov eax, %d\n", value);
@@ -71,4 +101,21 @@ void emit_if(int condition) {
 
 void emit_while(int condition) {
     printf("// WHILE placeholder: cond=%d\n", condition);
+}
+
+void emit_push(int value) {
+    printf("push %d\n", value);
+}
+
+void emit_call(const char *func_name, int arg_count) {
+    // çağrılan fonksiyon ismine karşılık gelen global pointer’a ulaşıp çağır
+    printf("lea eax, \"%s\"\n", func_name);
+    printf("mov eax, [eax]\n");
+    printf("call eax\n");
+
+    if (arg_count > 0) {
+        printf("add esp, %d\n", arg_count * 4); // stack'ten argümanları kaldır
+    }
+
+    // sonucu EAX'ta varsayıyoruz
 }

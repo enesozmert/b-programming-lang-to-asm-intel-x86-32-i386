@@ -5,6 +5,7 @@
 #include <stdlib.h>
 
 int yylex(void);
+void yyerror(const char *s);
 %}
 
 %union {
@@ -18,7 +19,7 @@ int yylex(void);
 %token <str> STRING
 %token EXTRN AUTO IF WHILE RETURN RELOP
 
-%type <num> expr term factor
+%type <num> expr term factor argument_list argument_list_opt
 
 %%
 
@@ -43,14 +44,22 @@ extrn_list:
 ;
 
 auto_list:
-    auto_list ',' IDENTIFIER
-  | IDENTIFIER
+    auto_list ',' IDENTIFIER {
+        sym_add_auto($3);
+    }
+  | IDENTIFIER {
+        sym_add_auto($1);
+    }
 ;
 
 func_decl:
-    IDENTIFIER '(' ')' block
+    IDENTIFIER '(' ')'
     {
+        sym_reset_locals();
         emit_function_start($1);
+    }
+    block
+    {
         emit_function_end();
     }
 ;
@@ -69,6 +78,9 @@ stmt:
   | if_stmt
   | while_stmt
   | return_stmt
+  | expr ';'
+  | AUTO auto_list ';'
+  | EXTRN extrn_list ';'
 ;
 
 assignment:
@@ -100,35 +112,41 @@ return_stmt:
 ;
 
 expr:
-    expr '+' term
-    {
-        $$ = emit_add($1, $3);
-    }
-  | expr '-' term
-    {
-        $$ = emit_sub($1, $3);
-    }
+    expr '+' term     { $$ = emit_add($1, $3); }
+  | expr '-' term     { $$ = emit_sub($1, $3); }
   | term
-;
+  ;
 
 term:
-    term '*' factor
-    {
-        $$ = emit_mul($1, $3);
-    }
-  | term '/' factor
-    {
-        $$ = emit_div($1, $3);
-    }
+    term '*' factor   { $$ = emit_mul($1, $3); }
+  | term '/' factor   { $$ = emit_div($1, $3); }
   | factor
-;
+  ;
 
 factor:
       NUMBER              { $$ = $1; }
     | IDENTIFIER          { $$ = sym_lookup_offset($1); }
-    | STRING               { $$ = 0; /* string için placeholder */ }
-    | '(' expr ')'         { $$ = $2; }
+    | IDENTIFIER '(' argument_list_opt ')'  {
+        emit_call($1, $3);
+        $$ = 0; // return value placeholder (eax)
+    }
+    | STRING              { $$ = 0; }
+    | '(' expr ')'        { $$ = $2; }
 ;
+
+argument_list_opt:
+      /* boş */           { $$ = 0; }
+    | argument_list       { $$ = $1; }
+;
+
+argument_list:
+      expr                { emit_push($1); $$ = 1; }
+    | argument_list ',' expr {
+          emit_push($3);
+          $$ = $1 + 1;
+      }
+;
+
 
 %%
 
